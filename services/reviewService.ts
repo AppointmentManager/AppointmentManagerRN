@@ -6,21 +6,22 @@ import { apiClient } from '../utils/apiClient';
 
 export interface ReviewRequest {
   userId: number;
-  vendorId: number;
+  storeId: number;
   appointmentId: number;
-  rating: number;
+  rating: number; // 1-5
   comment?: string;
 }
 
 export interface ReviewResponse {
-  id: number;
+  reviewId: number;
   userId: number;
-  vendorId: number;
+  userName: string;
+  storeId: number;
+  storeName: string;
   appointmentId: number;
   rating: number;
   comment?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export class ReviewService {
@@ -39,10 +40,10 @@ export class ReviewService {
   }
 
   /**
-   * Get all reviews for a specific vendor
+   * Get all reviews for a specific store
    */
-  static async getReviewsByVendor(vendorId: number): Promise<ReviewResponse[]> {
-    return apiClient.get<ReviewResponse[]>(`/reviews/vendor/${vendorId}`);
+  static async getReviewsByStore(storeId: number): Promise<ReviewResponse[]> {
+    return apiClient.get<ReviewResponse[]>(`/reviews/store/${storeId}`);
   }
 
   /**

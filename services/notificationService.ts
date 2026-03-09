@@ -5,9 +5,9 @@
 import { apiClient } from '../utils/apiClient';
 
 export interface NotificationResponse {
-  id: number;
+  notificationId: number;
   userId: number;
-  type: 'APPOINTMENT_REMINDER' | 'APPOINTMENT_CONFIRMATION' | 'APPOINTMENT_CANCELLATION' | 'PAYMENT_CONFIRMATION' | 'SYSTEM_NOTIFICATION';
+  notificationType: 'APPOINTMENT_REMINDER' | 'APPOINTMENT_CONFIRMATION' | 'APPOINTMENT_CANCELLATION' | 'PAYMENT_CONFIRMATION';
   title: string;
   message: string;
   isRead: boolean;

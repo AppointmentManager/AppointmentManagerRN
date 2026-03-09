@@ -3,39 +3,42 @@
  */
 
 import { apiClient } from '../utils/apiClient';
+import { config } from '../config/config';
 
 export interface AddressDTO {
-    street: string;
+    addressId?: number;
+    addressLine1: string;
+    addressLine2?: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    pincode: string;
+    latitude?: number;
+    longitude?: number;
     type: 'HOME' | 'WORK' | 'BUSINESS' | 'OTHER';
 }
 
 export interface UserProfileRequest {
     firstName: string;
     lastName: string;
-    email: string;
-    phoneNumber: string;
-    dateOfBirth?: string;
-    gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-    profilePictureUrl?: string;
-    addresses?: AddressDTO[];
+    emailId: string;
+    phoneNo: string;
+    birthDate: string; // LocalDate format: YYYY-MM-DD
+    gender: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
+    address: AddressDTO;
 }
 
 export interface UserProfileResponse {
-    id: number;
+    userId: number;
     firstName: string;
     lastName: string;
-    email: string;
-    phoneNumber: string;
-    dateOfBirth?: string;
-    gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-    profilePictureUrl?: string;
-    addresses?: AddressDTO[];
+    emailId: string;
+    phoneNo: string;
+    birthDate: string;
+    gender: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
+    address: AddressDTO;
     createdAt: string;
-    updatedAt: string;
+    isActive: boolean;
 }
 
 export class UserService {
@@ -43,41 +46,41 @@ export class UserService {
      * Create a new user
      */
     static async createUser(request: UserProfileRequest): Promise<UserProfileResponse> {
-        return apiClient.post<UserProfileResponse>('/users/create', request);
+        return await apiClient.post<UserProfileResponse>('/users/create', request);
     }
 
     /**
      * Get user by ID
      */
     static async getUserById(id: number): Promise<UserProfileResponse> {
-        return apiClient.get<UserProfileResponse>(`/users/${id}`);
+        return await apiClient.get<UserProfileResponse>(`/users/${id}`);
     }
 
     /**
      * Get all users
      */
     static async getAllUsers(): Promise<UserProfileResponse[]> {
-        return apiClient.get<UserProfileResponse[]>('/users');
+        return await apiClient.get<UserProfileResponse[]>('/users');
     }
 
     /**
      * Update user (full update)
      */
     static async updateUser(id: number, request: UserProfileRequest): Promise<UserProfileResponse> {
-        return apiClient.put<UserProfileResponse>(`/users/update/${id}`, request);
+        return await apiClient.put<UserProfileResponse>(`/users/update/${id}`, request);
     }
 
     /**
      * Partial update user
      */
     static async partialUpdateUser(id: number, request: Partial<UserProfileRequest>): Promise<UserProfileResponse> {
-        return apiClient.patch<UserProfileResponse>(`/users/update/${id}`, request);
+        return await apiClient.patch<UserProfileResponse>(`/users/update/${id}`, request);
     }
 
     /**
      * Delete user
      */
     static async deleteUser(id: number): Promise<void> {
-        return apiClient.delete<void>(`/users/${id}`);
+        return await apiClient.delete<void>(`/users/${id}`);
     }
 }

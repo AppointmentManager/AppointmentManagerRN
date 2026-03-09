@@ -12,15 +12,13 @@ export interface PaymentRequest {
 }
 
 export interface PaymentResponse {
-  id: number;
+  paymentId: number;
   appointmentId: number;
   amount: number;
   paymentMethod: 'CASH' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'UPI' | 'NET_BANKING';
   paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
   transactionId?: string;
-  paymentDate?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export class PaymentService {

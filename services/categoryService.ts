@@ -5,20 +5,17 @@
 import { apiClient } from '../utils/apiClient';
 
 export interface CategoryRequest {
-  name: string;
+  categoryName: string;
   description?: string;
-  icon?: string;
-  isActive: boolean;
+  iconUrl?: string;
 }
 
 export interface CategoryResponse {
-  id: number;
-  name: string;
+  categoryId: number;
+  categoryName: string;
   description?: string;
-  icon?: string;
+  iconUrl?: string;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export class CategoryService {
@@ -26,14 +23,14 @@ export class CategoryService {
    * Create a new category
    */
   static async createCategory(request: CategoryRequest): Promise<CategoryResponse> {
-    return apiClient.post<CategoryResponse>('/categories', request);
+    return await apiClient.post<CategoryResponse>('/categories', request);
   }
 
   /**
    * Get category by ID
    */
   static async getCategoryById(id: number): Promise<CategoryResponse> {
-    return apiClient.get<CategoryResponse>(`/categories/${id}`);
+    return await apiClient.get<CategoryResponse>(`/categories/${id}`);
   }
 
   /**
@@ -42,20 +39,20 @@ export class CategoryService {
    */
   static async getAllCategories(activeOnly: boolean = false): Promise<CategoryResponse[]> {
     const endpoint = activeOnly ? '/categories?activeOnly=true' : '/categories';
-    return apiClient.get<CategoryResponse[]>(endpoint);
+    return await apiClient.get<CategoryResponse[]>(endpoint);
   }
 
   /**
    * Update a category
    */
   static async updateCategory(id: number, request: CategoryRequest): Promise<CategoryResponse> {
-    return apiClient.put<CategoryResponse>(`/categories/${id}`, request);
+    return await apiClient.put<CategoryResponse>(`/categories/${id}`, request);
   }
 
   /**
    * Delete a category
    */
   static async deleteCategory(id: number): Promise<void> {
-    return apiClient.delete<void>(`/categories/${id}`);
+    return await apiClient.delete<void>(`/categories/${id}`);
   }
 }

@@ -10,9 +10,11 @@ export interface FavoriteRequest {
 }
 
 export interface FavoriteResponse {
-  id: number;
+  favoriteId: number;
   userId: number;
   vendorId: number;
+  vendorName: string;
+  vendorIconUrl?: string;
   createdAt: string;
 }
 
@@ -21,20 +23,20 @@ export class FavoriteService {
    * Add a vendor to favorites
    */
   static async addFavorite(request: FavoriteRequest): Promise<FavoriteResponse> {
-    return apiClient.post<FavoriteResponse>('/favorites', request);
+    return await apiClient.post<FavoriteResponse>('/favorites', request);
   }
 
   /**
    * Get all favorites for a specific user
    */
   static async getUserFavorites(userId: number): Promise<FavoriteResponse[]> {
-    return apiClient.get<FavoriteResponse[]>(`/favorites/user/${userId}`);
+    return await apiClient.get<FavoriteResponse[]>(`/favorites/user/${userId}`);
   }
 
   /**
    * Remove a favorite
    */
   static async removeFavorite(id: number): Promise<void> {
-    return apiClient.delete<void>(`/favorites/${id}`);
+    return await apiClient.delete<void>(`/favorites/${id}`);
   }
 }
