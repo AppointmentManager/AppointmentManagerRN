@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,21 +7,38 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
+import { useUserProfile } from '../hooks/useUserProfile';
+import { UserService } from '../services/userService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileEditScreen() {
     const navigation = useNavigation<NavigationProp>();
+    const { profile, isLoading, error, refetch } = useUserProfile();
+
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleSave = () => {
+    // Populate form fields when profile data is fetched
+    useEffect(() => {
+        if (profile) {
+            const nameParts = profile.name.split(' ');
+            setFirstName(nameParts[0] || '');
+            setLastName(nameParts.slice(1).join(' ') || '');
+            setEmail(profile.email || '');
+            setMobileNumber(profile.phone || '');
+        }
+    }, [profile]);
+
+    const handleSave = async () => {
         // Basic validation
         if (!firstName || !lastName || !email || !mobileNumber) {
             Alert.alert('Error', 'Please fill in all fields');
@@ -35,14 +52,73 @@ export default function ProfileEditScreen() {
             return;
         }
 
-        // In a real app, you would save this data to AsyncStorage or backend
-        Alert.alert('Success', 'Profile updated successfully!', [
-            {
-                text: 'OK',
-                onPress: () => navigation.goBack(),
-            },
-        ]);
+        setIsSaving(true);
+        try {
+            const result = await UserService.updateUserProfile({
+                firstName,
+                lastName,
+                email,
+                phone: mobileNumber,
+            });
+
+            if (result.success) {
+                Alert.alert('Success', result.message || 'Profile updated successfully!', [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.goBack(),
+                    },
+                ]);
+            } else {
+                Alert.alert('Error', result.error || 'Failed to update profile');
+            }
+        } catch (err) {
+            Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Text style={styles.backIcon}>←</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Edit Profile</Text>
+                    <View style={styles.placeholder} />
+                </View>
+                <View style={styles.centered}>
+                    <ActivityIndicator size="large" color="#4169E1" />
+                    <Text style={styles.loadingText}>Loading profile...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Text style={styles.backIcon}>←</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Edit Profile</Text>
+                    <View style={styles.placeholder} />
+                </View>
+                <View style={styles.centered}>
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity style={styles.retryButton} onPress={refetch}>
+                        <Text style={styles.retryButtonText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
+    const displayInitial = profile?.initial || firstName?.charAt(0)?.toUpperCase() || '?';
 
     return (
         <View style={styles.container}>
@@ -60,7 +136,7 @@ export default function ProfileEditScreen() {
                 <View style={styles.profileSection}>
                     <View style={styles.profilePictureContainer}>
                         <View style={styles.profileBadge}>
-                            <Text style={styles.profileText}>V</Text>
+                            <Text style={styles.profileText}>{displayInitial}</Text>
                         </View>
                         <TouchableOpacity style={styles.cameraButton}>
                             <Text style={styles.cameraIcon}>📷</Text>
@@ -126,8 +202,16 @@ export default function ProfileEditScreen() {
                 </View>
 
                 {/* Save Button */}
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                <TouchableOpacity
+                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                    onPress={handleSave}
+                    disabled={isSaving}
+                >
+                    {isSaving ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                        <Text style={styles.saveButtonText}>Save Changes</Text>
+                    )}
                 </TouchableOpacity>
             </ScrollView>
         </View>
@@ -246,6 +330,37 @@ const styles = StyleSheet.create({
     saveButtonText: {
         fontSize: 18,
         fontWeight: 'bold',
+        color: '#FFFFFF',
+    },
+    saveButtonDisabled: {
+        opacity: 0.6,
+    },
+    centered: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 32,
+    },
+    loadingText: {
+        fontSize: 16,
+        color: '#999',
+        marginTop: 12,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#FF6B6B',
+        textAlign: 'center',
+        marginBottom: 16,
+    },
+    retryButton: {
+        backgroundColor: '#4169E1',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+    },
+    retryButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
         color: '#FFFFFF',
     },
 });

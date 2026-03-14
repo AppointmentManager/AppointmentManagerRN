@@ -1,18 +1,14 @@
 /**
- * Notification Service - Handles all notification-related API calls
+ * Notification Service - Business logic layer for notification operations
+ * Interacts with NotificationRepository for data access.
+ * UI layer should only interact with this service.
  */
 
-import { apiClient } from '../utils/apiClient';
-
-export interface NotificationResponse {
-  notificationId: number;
-  userId: number;
-  notificationType: 'APPOINTMENT_REMINDER' | 'APPOINTMENT_CONFIRMATION' | 'APPOINTMENT_CANCELLATION' | 'PAYMENT_CONFIRMATION';
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-}
+import { ApiResponse } from '../types/types';
+import {
+  NotificationRepository,
+  NotificationResponse,
+} from '../repository/NotificationRepository';
 
 export class NotificationService {
   /**
@@ -23,25 +19,54 @@ export class NotificationService {
   static async getUserNotifications(
     userId: number,
     unreadOnly: boolean = false
-  ): Promise<NotificationResponse[]> {
-    const endpoint = unreadOnly
-      ? `/notifications/user/${userId}?unreadOnly=true`
-      : `/notifications/user/${userId}`;
-
-    return apiClient.get<NotificationResponse[]>(endpoint);
+  ): Promise<ApiResponse<NotificationResponse[]>> {
+    try {
+      const responses = await NotificationRepository.getUserNotifications(userId, unreadOnly);
+      return {
+        success: true,
+        data: responses,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch notifications',
+      };
+    }
   }
 
   /**
    * Mark a notification as read
    */
-  static async markAsRead(id: number): Promise<void> {
-    return apiClient.patch<void>(`/notifications/${id}/read`);
+  static async markAsRead(id: number): Promise<ApiResponse<void>> {
+    try {
+      await NotificationRepository.markAsRead(id);
+      return {
+        success: true,
+        message: 'Notification marked as read',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to mark notification as read',
+      };
+    }
   }
 
   /**
    * Delete a notification
    */
-  static async deleteNotification(id: number): Promise<void> {
-    return apiClient.delete<void>(`/notifications/${id}`);
+  static async deleteNotification(id: number): Promise<ApiResponse<void>> {
+    try {
+      await NotificationRepository.deleteNotification(id);
+      return {
+        success: true,
+        message: 'Notification deleted successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete notification',
+      };
+    }
   }
 }

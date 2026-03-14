@@ -1,86 +1,98 @@
 /**
- * User Service - Handles all user-related API calls
+ * User Service - Business logic layer for user operations
+ * Interacts with UserRepository for data access and UserTransformer for DTO mapping.
+ * UI layer should only interact with this service.
  */
 
-import { apiClient } from '../utils/apiClient';
-import { config } from '../config/config';
-
-export interface AddressDTO {
-    addressId?: number;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    country: string;
-    pincode: string;
-    latitude?: number;
-    longitude?: number;
-    type: 'HOME' | 'WORK' | 'BUSINESS' | 'OTHER';
-}
-
-export interface UserProfileRequest {
-    firstName: string;
-    lastName: string;
-    emailId: string;
-    phoneNo: string;
-    birthDate: string; // LocalDate format: YYYY-MM-DD
-    gender: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-    address: AddressDTO;
-}
-
-export interface UserProfileResponse {
-    userId: number;
-    firstName: string;
-    lastName: string;
-    emailId: string;
-    phoneNo: string;
-    birthDate: string;
-    gender: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-    address: AddressDTO;
-    createdAt: string;
-    isActive: boolean;
-}
+import { UserProfile, ApiResponse } from '../types/types';
+import { UserRepository } from '../repository/UserRepository';
+import { UserTransformer } from '../transformers/UserTransformer';
 
 export class UserService {
     /**
-     * Create a new user
+     * Get the current user's profile
+     * Returns an ApiResponse<UserProfile> compatible with the useUserProfile hook
+     * TODO: Replace hardcoded userId with actual authenticated user ID
      */
-    static async createUser(request: UserProfileRequest): Promise<UserProfileResponse> {
-        return await apiClient.post<UserProfileResponse>('/users/create', request);
+    static async getUserProfile(): Promise<ApiResponse<UserProfile>> {
+        try {
+            const response = await UserRepository.getUserById(1);
+            return {
+                success: true,
+                data: UserTransformer.toUserProfile(response),
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to fetch profile',
+            };
+        }
     }
 
     /**
-     * Get user by ID
+     * Update the current user's profile from the edit screen fields
+     * Sends a partial update and returns the updated ApiResponse<UserProfile>
+     * TODO: Replace hardcoded userId with actual authenticated user ID
      */
-    static async getUserById(id: number): Promise<UserProfileResponse> {
-        return await apiClient.get<UserProfileResponse>(`/users/${id}`);
+    static async updateUserProfile(fields: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone: string;
+    }): Promise<ApiResponse<UserProfile>> {
+        try {
+            const response = await UserRepository.partialUpdateUser(1, {
+                firstName: fields.firstName,
+                lastName: fields.lastName,
+                emailId: fields.email,
+                phoneNo: fields.phone,
+            });
+            return {
+                success: true,
+                data: UserTransformer.toUserProfile(response),
+                message: 'Profile updated successfully',
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to update profile',
+            };
+        }
     }
 
     /**
-     * Get all users
+     * Get all users as UserProfile list
      */
-    static async getAllUsers(): Promise<UserProfileResponse[]> {
-        return await apiClient.get<UserProfileResponse[]>('/users');
+    static async getAllUsers(): Promise<ApiResponse<UserProfile[]>> {
+        try {
+            const responses = await UserRepository.getAllUsers();
+            return {
+                success: true,
+                data: UserTransformer.toUserProfileList(responses),
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to fetch users',
+            };
+        }
     }
 
     /**
-     * Update user (full update)
+     * Delete a user by ID
      */
-    static async updateUser(id: number, request: UserProfileRequest): Promise<UserProfileResponse> {
-        return await apiClient.put<UserProfileResponse>(`/users/update/${id}`, request);
-    }
-
-    /**
-     * Partial update user
-     */
-    static async partialUpdateUser(id: number, request: Partial<UserProfileRequest>): Promise<UserProfileResponse> {
-        return await apiClient.patch<UserProfileResponse>(`/users/update/${id}`, request);
-    }
-
-    /**
-     * Delete user
-     */
-    static async deleteUser(id: number): Promise<void> {
-        return await apiClient.delete<void>(`/users/${id}`);
+    static async deleteUser(id: number): Promise<ApiResponse<void>> {
+        try {
+            await UserRepository.deleteUser(id);
+            return {
+                success: true,
+                message: 'User deleted successfully',
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to delete user',
+            };
+        }
     }
 }

@@ -1,91 +1,107 @@
 /**
- * Vendor Service - Handles all vendor-related API calls
+ * Vendor Service - Business logic layer for vendor operations
+ * Interacts with VendorRepository for data access.
+ * UI layer should only interact with this service.
  */
 
-import { apiClient } from '../utils/apiClient';
-
-export interface AddressDTO {
-  addressId?: number;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state: string;
-  country: string;
-  pincode: string;
-  latitude?: number;
-  longitude?: number;
-  type: 'HOME' | 'WORK' | 'BUSINESS' | 'OTHER';
-}
-
-export interface CategoryResponse {
-  categoryId: number;
-  categoryName: string;
-  description?: string;
-  iconUrl?: string;
-  isActive: boolean;
-}
-
-export interface VendorProfileRequest {
-  vendorName: string;
-  categoryId: number;
-  emailId: string;
-  phoneNo: string;
-  description?: string;
-  gstNumber: string;
-}
-
-export interface VendorProfileResponse {
-  vendorId: number;
-  vendorName: string;
-  category: CategoryResponse;
-  emailId: string;
-  phoneNo: string;
-  description?: string;
-  address?: AddressDTO;
-  gstNumber: string;
-  averageRating?: number;
-  isActive: boolean;
-}
-
-
+import { ApiResponse } from '../types/types';
+import {
+  VendorRepository,
+  VendorProfileRequest,
+  VendorProfileResponse,
+} from '../repository/VendorRepository';
 
 export class VendorService {
   /**
    * Create a new vendor
    */
-  static async createVendor(request: VendorProfileRequest): Promise<VendorProfileResponse> {
-    return await apiClient.post<VendorProfileResponse>('/vendors', request);
+  static async createVendor(request: VendorProfileRequest): Promise<ApiResponse<VendorProfileResponse>> {
+    try {
+      const response = await VendorRepository.createVendor(request);
+      return {
+        success: true,
+        data: response,
+        message: 'Vendor created successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create vendor',
+      };
+    }
   }
 
   /**
    * Get vendor by ID
    */
-  static async getVendorById(id: number): Promise<VendorProfileResponse> {
-    return await apiClient.get<VendorProfileResponse>(`/vendors/${id}`);
+  static async getVendorById(id: number): Promise<ApiResponse<VendorProfileResponse>> {
+    try {
+      const response = await VendorRepository.getVendorById(id);
+      return {
+        success: true,
+        data: response,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch vendor',
+      };
+    }
   }
 
   /**
    * Get all vendors
    * @param categoryId - Optional filter by category ID
    */
-  static async getAllVendors(categoryId?: number): Promise<VendorProfileResponse[]> {
-    const endpoint = categoryId
-      ? `/vendors?categoryId=${categoryId}`
-      : '/vendors';
-    return await apiClient.get<VendorProfileResponse[]>(endpoint);
+  static async getAllVendors(categoryId?: number): Promise<ApiResponse<VendorProfileResponse[]>> {
+    try {
+      const responses = await VendorRepository.getAllVendors(categoryId);
+      return {
+        success: true,
+        data: responses,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch vendors',
+      };
+    }
   }
 
   /**
    * Update a vendor
    */
-  static async updateVendor(id: number, request: VendorProfileRequest): Promise<VendorProfileResponse> {
-    return await apiClient.put<VendorProfileResponse>(`/vendors/${id}`, request);
+  static async updateVendor(id: number, request: VendorProfileRequest): Promise<ApiResponse<VendorProfileResponse>> {
+    try {
+      const response = await VendorRepository.updateVendor(id, request);
+      return {
+        success: true,
+        data: response,
+        message: 'Vendor updated successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update vendor',
+      };
+    }
   }
 
   /**
    * Delete a vendor
    */
-  static async deleteVendor(id: number): Promise<void> {
-    return await apiClient.delete<void>(`/vendors/${id}`);
+  static async deleteVendor(id: number): Promise<ApiResponse<void>> {
+    try {
+      await VendorRepository.deleteVendor(id);
+      return {
+        success: true,
+        message: 'Vendor deleted successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete vendor',
+      };
+    }
   }
 }
