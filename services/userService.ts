@@ -36,6 +36,8 @@ export class UserService {
     static async getUserLocation(): Promise<ApiResponse<UserLocation>> {
         try {
             const response = await UserRepository.getUserById(1);
+            console.log("location response: " + JSON.stringify(response));
+
             return {
                 success: true,
                 data: UserTransformer.toUserLocation(response),

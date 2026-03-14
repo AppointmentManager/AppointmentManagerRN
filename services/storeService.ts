@@ -86,12 +86,13 @@ export class StoreService {
                         return StoreTransformer.toStoreCard(store, availability, now);
                     })
             );
-
+            console.log("store catalog: " + JSON.stringify(cards));
             return {
                 success: true,
                 data: cards,
             };
         } catch (error) {
+            console.log("store catalog error: " + JSON.stringify(error));
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Failed to fetch stores',
