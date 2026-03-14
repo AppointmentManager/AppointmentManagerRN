@@ -3,16 +3,17 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
-import { Vendor } from '../data/VendorModel';
+import { VendorCardData } from '../types/vendor';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface VendorCardProps {
-    vendor: Vendor;
+    vendor: VendorCardData;
 }
 
 export default function VendorCard({ vendor }: VendorCardProps) {
     const navigation = useNavigation<NavigationProp>();
+    const vendorInitial = vendor.name.charAt(0).toUpperCase();
 
     const handlePress = () => {
         navigation.navigate('VendorDetails', { vendorId: vendor.id });
@@ -20,18 +21,28 @@ export default function VendorCard({ vendor }: VendorCardProps) {
 
     return (
         <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.9}>
-            <Image source={{ uri: vendor.imageUrl }} style={styles.image} />
+            {vendor.imageUrl ? (
+                <Image source={{ uri: vendor.imageUrl }} style={styles.image} />
+            ) : (
+                <View style={[styles.image, styles.imageFallback]}>
+                    <Text style={styles.imageFallbackText}>{vendorInitial}</Text>
+                </View>
+            )}
             <View style={styles.content}>
                 <View style={styles.header}>
                     <Text style={styles.name}>{vendor.name}</Text>
                     <View style={styles.ratingContainer}>
                         <Text style={styles.star}>★</Text>
-                        <Text style={styles.rating}>{vendor.rating}</Text>
+                        <Text style={styles.rating}>
+                            {vendor.rating !== null ? vendor.rating.toFixed(1) : 'New'}
+                        </Text>
                     </View>
                 </View>
 
                 <Text style={styles.address}>{vendor.address}</Text>
-                <Text style={styles.nextSlot}>Next: {vendor.nextAvailableSlot}</Text>
+                <Text style={[styles.nextSlot, vendor.isOpen ? styles.openText : styles.closedText]}>
+                    {vendor.isOpen ? 'Open now' : 'Closed'} • {vendor.nextAvailableSlot}
+                </Text>
 
                 <View style={styles.footer}>
                     <View style={styles.categoryBadge}>
@@ -64,6 +75,16 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 12,
         backgroundColor: '#333',
+    },
+    imageFallback: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#163d2a',
+    },
+    imageFallbackText: {
+        color: '#FFFFFF',
+        fontSize: 32,
+        fontWeight: '700',
     },
     content: {
         flex: 1,
@@ -107,9 +128,14 @@ const styles = StyleSheet.create({
     },
     nextSlot: {
         fontSize: 12,
-        color: '#00AA00',
         marginTop: 4,
         fontWeight: '500',
+    },
+    openText: {
+        color: '#00AA00',
+    },
+    closedText: {
+        color: '#FF8A80',
     },
     footer: {
         flexDirection: 'row',

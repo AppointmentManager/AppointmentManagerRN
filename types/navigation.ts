@@ -1,7 +1,7 @@
 export type RootStackParamList = {
     Home: undefined;
     ProfileEdit: undefined;
-    VendorDetails: { vendorId: string };
+    VendorDetails: { vendorId: number };
 };
 
 declare global {

@@ -37,7 +37,7 @@ class ApiClient {
      * Call this after user login
      */
     setAuthToken(token: string) {
-        this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+        this.defaultHeaders.Authorization = `Bearer ${token}`;
     }
 
     /**
@@ -45,7 +45,7 @@ class ApiClient {
      * Call this after user logout
      */
     clearAuthToken() {
-        delete this.defaultHeaders['Authorization'];
+        delete this.defaultHeaders.Authorization;
     }
 
     /**

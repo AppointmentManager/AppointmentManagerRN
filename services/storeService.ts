@@ -12,6 +12,8 @@ import {
     StoreAvailabilityRequest,
     StoreAvailabilityResponse,
 } from '../repository/StoreRepository';
+import { StoreTransformer } from '../transformers/StoreTransformer';
+import { StoreCardData } from '../types/store';
 
 export class StoreService {
     /**
@@ -47,6 +49,52 @@ export class StoreService {
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Failed to fetch store',
+            };
+        }
+    }
+
+    /**
+     * Get all stores
+     */
+    static async getAllStores(): Promise<ApiResponse<StoreResponse[]>> {
+        try {
+            const responses = await StoreRepository.getAllStores();
+            return {
+                success: true,
+                data: responses,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to fetch stores',
+            };
+        }
+    }
+
+    /**
+     * Get store card data with availability for the home screen
+     */
+    static async getStoreCatalog(): Promise<ApiResponse<StoreCardData[]>> {
+        try {
+            const stores = await StoreRepository.getAllStores();
+            const now = new Date();
+            const cards = await Promise.all(
+                stores
+                    .filter(store => store.isActive)
+                    .map(async store => {
+                        const availability = await this.getStoreAvailabilityData(store.storeId);
+                        return StoreTransformer.toStoreCard(store, availability, now);
+                    })
+            );
+
+            return {
+                success: true,
+                data: cards,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to fetch stores',
             };
         }
     }
@@ -166,6 +214,14 @@ export class StoreService {
                 success: false,
                 error: error instanceof Error ? error.message : 'Failed to update availability',
             };
+        }
+    }
+
+    private static async getStoreAvailabilityData(storeId: number): Promise<StoreAvailabilityResponse[]> {
+        try {
+            return await StoreRepository.getStoreAvailability(storeId);
+        } catch {
+            return [];
         }
     }
 }

@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import {
+    ActivityIndicator,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
-import { VendorService } from '../data/VendorService';
-import { Vendor } from '../data/VendorModel';
+import { VendorDetailsData } from '../types/vendor';
+import { VendorService } from '../services/vendorService';
 import TimeSlotModal from './TimeSlotModal';
 
 type VendorDetailsRouteProp = RouteProp<RootStackParamList, 'VendorDetails'>;
@@ -12,29 +20,47 @@ export default function VendorDetailsScreen() {
     const route = useRoute<VendorDetailsRouteProp>();
     const navigation = useNavigation();
     const { vendorId } = route.params;
-    const [vendor, setVendor] = useState<Vendor | null>(null);
+    const [vendor, setVendor] = useState<VendorDetailsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
-    const [selectedService, setSelectedService] = useState<string | null>(null);
     const [slots, setSlots] = useState<string[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
 
     useEffect(() => {
-        loadVendor();
+        let isMounted = true;
+
+        const fetchVendor = async () => {
+            setLoading(true);
+            const response = await VendorService.getVendorDetails(vendorId);
+
+            if (!isMounted) {
+                return;
+            }
+
+            if (response.success && response.data) {
+                setVendor(response.data);
+                setError(null);
+            } else {
+                setVendor(null);
+                setError(response.error || 'Vendor not found');
+            }
+
+            setLoading(false);
+        };
+
+        fetchVendor();
+
+        return () => {
+            isMounted = false;
+        };
     }, [vendorId]);
 
-    const loadVendor = async () => {
-        const data = await VendorService.getVendorById(vendorId);
-        setVendor(data || null);
-        setLoading(false);
-    };
-
-    const handleServicePress = async (serviceId: string) => {
-        setSelectedService(serviceId);
+    const handleServicePress = async (serviceId: number) => {
         setModalVisible(true);
         setLoadingSlots(true);
-        const availableSlots = await VendorService.getAvailableSlots(vendorId, serviceId);
-        setSlots(availableSlots);
+        const response = await VendorService.getAvailableSlots(vendorId, serviceId);
+        setSlots(response.success && response.data ? response.data : []);
         setLoadingSlots(false);
     };
 
@@ -49,7 +75,7 @@ export default function VendorDetailsScreen() {
     if (!vendor) {
         return (
             <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>Vendor not found</Text>
+                <Text style={styles.errorText}>{error || 'Vendor not found'}</Text>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={styles.backText}>Go Back</Text>
                 </TouchableOpacity>
@@ -57,10 +83,18 @@ export default function VendorDetailsScreen() {
         );
     }
 
+    const vendorInitial = vendor.name.charAt(0).toUpperCase();
+
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Image source={{ uri: vendor.imageUrl }} style={styles.coverImage} />
+                {vendor.imageUrl ? (
+                    <Image source={{ uri: vendor.imageUrl }} style={styles.coverImage} />
+                ) : (
+                    <View style={[styles.coverImage, styles.coverFallback]}>
+                        <Text style={styles.coverFallbackText}>{vendorInitial}</Text>
+                    </View>
+                )}
 
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Text style={styles.backButtonText}>←</Text>
@@ -71,43 +105,63 @@ export default function VendorDetailsScreen() {
                         <Text style={styles.name}>{vendor.name}</Text>
                         <View style={styles.ratingBadge}>
                             <Text style={styles.star}>★</Text>
-                            <Text style={styles.rating}>{vendor.rating}</Text>
+                            <Text style={styles.rating}>
+                                {vendor.rating !== null ? vendor.rating.toFixed(1) : 'New'}
+                            </Text>
                         </View>
                     </View>
 
                     <Text style={styles.address}>{vendor.address}</Text>
 
                     <View style={styles.statusContainer}>
-                        {vendor.isOpen ? (
-                            <Text style={styles.openBadge}>Open Now</Text>
-                        ) : (
-                            <Text style={styles.closedBadge}>Closed</Text>
-                        )}
+                        <Text style={vendor.isOpen ? styles.openBadge : styles.closedBadge}>
+                            {vendor.isOpen ? 'Open Now' : 'Closed'}
+                        </Text>
                         <Text style={styles.dot}>•</Text>
                         <Text style={styles.category}>{vendor.category}</Text>
+                    </View>
+
+                    <Text style={styles.nextSlot}>Next available: {vendor.nextAvailableSlot}</Text>
+
+                    {vendor.description ? (
+                        <Text style={styles.description}>{vendor.description}</Text>
+                    ) : null}
+
+                    <View style={styles.contactCard}>
+                        <Text style={styles.contactLabel}>Email</Text>
+                        <Text style={styles.contactValue}>{vendor.email}</Text>
+                        <Text style={styles.contactLabel}>Phone</Text>
+                        <Text style={styles.contactValue}>{vendor.phone}</Text>
                     </View>
 
                     <Text style={styles.sectionTitle}>Services</Text>
 
                     <View style={styles.servicesList}>
-                        {vendor.services.map((service) => (
-                            <TouchableOpacity
-                                key={service.id}
-                                style={styles.serviceItem}
-                                onPress={() => handleServicePress(service.id)}
-                            >
-                                <View style={styles.serviceInfo}>
-                                    <Text style={styles.serviceName}>{service.name}</Text>
-                                    <Text style={styles.serviceDuration}>{service.durationMinutes} min</Text>
-                                </View>
-                                <View style={styles.serviceAction}>
-                                    <Text style={styles.servicePrice}>${service.price}</Text>
-                                    <View style={styles.bookServiceButton}>
-                                        <Text style={styles.bookServiceButtonText}>Book</Text>
+                        {vendor.services.length === 0 ? (
+                            <Text style={styles.emptyServicesText}>No services published yet.</Text>
+                        ) : (
+                            vendor.services.map(service => (
+                                <TouchableOpacity
+                                    key={service.id}
+                                    style={styles.serviceItem}
+                                    onPress={() => handleServicePress(service.id)}
+                                    activeOpacity={0.85}
+                                >
+                                    <View style={styles.serviceInfo}>
+                                        <Text style={styles.serviceName}>{service.name}</Text>
+                                        <Text style={styles.serviceMeta}>
+                                            {service.durationMinutes} min • {service.category}
+                                        </Text>
                                     </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
+                                    <View style={styles.serviceAction}>
+                                        <Text style={styles.servicePrice}>${service.price.toFixed(2)}</Text>
+                                        <View style={styles.bookServiceButton}>
+                                            <Text style={styles.bookServiceButtonText}>Book</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))
+                        )}
                     </View>
                 </View>
             </ScrollView>
@@ -138,11 +192,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#1a1a1a',
+        paddingHorizontal: 24,
     },
     errorText: {
-        color: '#FF0000',
+        color: '#FF8A80',
         fontSize: 18,
         marginBottom: 16,
+        textAlign: 'center',
     },
     backText: {
         color: '#00AA00',
@@ -154,6 +210,17 @@ const styles = StyleSheet.create({
     coverImage: {
         width: '100%',
         height: 250,
+        backgroundColor: '#333333',
+    },
+    coverFallback: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#163d2a',
+    },
+    coverFallbackText: {
+        fontSize: 72,
+        fontWeight: '700',
+        color: '#FFFFFF',
     },
     backButton: {
         position: 'absolute',
@@ -167,7 +234,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     backButtonText: {
-        color: '#FFF',
+        color: '#FFFFFF',
         fontSize: 24,
         fontWeight: 'bold',
     },
@@ -179,6 +246,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 8,
+        gap: 12,
     },
     name: {
         fontSize: 24,
@@ -189,7 +257,7 @@ const styles = StyleSheet.create({
     ratingBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#333',
+        backgroundColor: '#333333',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
@@ -206,28 +274,57 @@ const styles = StyleSheet.create({
     },
     address: {
         fontSize: 14,
-        color: '#888',
+        color: '#AAAAAA',
         marginBottom: 12,
     },
     statusContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 8,
     },
     openBadge: {
         color: '#00AA00',
         fontWeight: 'bold',
     },
     closedBadge: {
-        color: '#FF0000',
+        color: '#FF8A80',
         fontWeight: 'bold',
     },
     dot: {
-        color: '#888',
+        color: '#888888',
         marginHorizontal: 8,
     },
     category: {
-        color: '#CCC',
+        color: '#DDDDDD',
+    },
+    nextSlot: {
+        fontSize: 14,
+        color: '#9ED5A6',
+        marginBottom: 16,
+    },
+    description: {
+        color: '#DDDDDD',
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 16,
+    },
+    contactCard: {
+        backgroundColor: '#222222',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 24,
+        gap: 4,
+    },
+    contactLabel: {
+        color: '#7FAE8B',
+        fontSize: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginTop: 4,
+    },
+    contactValue: {
+        color: '#FFFFFF',
+        fontSize: 14,
     },
     sectionTitle: {
         fontSize: 18,
@@ -238,47 +335,50 @@ const styles = StyleSheet.create({
     servicesList: {
         gap: 12,
     },
+    emptyServicesText: {
+        color: '#CCCCCC',
+        fontSize: 15,
+    },
     serviceItem: {
+        backgroundColor: '#232323',
+        borderRadius: 16,
+        padding: 16,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#2a2a2a',
-        padding: 16,
-        borderRadius: 12,
+        gap: 12,
     },
     serviceInfo: {
         flex: 1,
+        gap: 4,
     },
     serviceName: {
-        fontSize: 16,
         color: '#FFFFFF',
-        marginBottom: 4,
+        fontSize: 16,
+        fontWeight: '600',
     },
-    serviceDuration: {
-        fontSize: 12,
-        color: '#888',
+    serviceMeta: {
+        color: '#A8A8A8',
+        fontSize: 13,
     },
     serviceAction: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
+        alignItems: 'flex-end',
+        gap: 8,
     },
     servicePrice: {
-        fontSize: 16,
-        fontWeight: 'bold',
         color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
     },
     bookServiceButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
         backgroundColor: '#00AA00',
-        justifyContent: 'center',
-        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 999,
     },
     bookServiceButtonText: {
-        fontSize: 12,
-        fontWeight: 'bold',
         color: '#FFFFFF',
+        fontWeight: '700',
+        fontSize: 12,
     },
 });

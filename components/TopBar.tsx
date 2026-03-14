@@ -17,7 +17,9 @@ export default function TopBar() {
 
     // Helper function to truncate address
     const truncateAddress = (address: string, maxLength: number = 30): string => {
-        if (address.length <= maxLength) return address;
+        if (address.length <= maxLength) {
+            return address;
+        }
         return address.substring(0, maxLength) + '...';
     };
 

@@ -72,6 +72,13 @@ export class StoreRepository {
     }
 
     /**
+     * Get all stores
+     */
+    static async getAllStores(): Promise<StoreResponse[]> {
+        return apiClient.get<StoreResponse[]>('/stores');
+    }
+
+    /**
      * Get all stores for a specific vendor
      */
     static async getStoresByVendor(vendorId: number): Promise<StoreResponse[]> {

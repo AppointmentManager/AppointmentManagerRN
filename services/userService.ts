@@ -4,7 +4,7 @@
  * UI layer should only interact with this service.
  */
 
-import { UserProfile, ApiResponse } from '../types/types';
+import { UserLocation, UserProfile, ApiResponse } from '../types/types';
 import { UserRepository } from '../repository/UserRepository';
 import { UserTransformer } from '../transformers/UserTransformer';
 
@@ -25,6 +25,25 @@ export class UserService {
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Failed to fetch profile',
+            };
+        }
+    }
+
+    /**
+     * Get the current user's primary location
+     * TODO: Replace hardcoded userId with actual authenticated user ID
+     */
+    static async getUserLocation(): Promise<ApiResponse<UserLocation>> {
+        try {
+            const response = await UserRepository.getUserById(1);
+            return {
+                success: true,
+                data: UserTransformer.toUserLocation(response),
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to fetch location',
             };
         }
     }

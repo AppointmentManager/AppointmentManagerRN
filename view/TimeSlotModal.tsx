@@ -29,6 +29,8 @@ export default function TimeSlotModal({ visible, onClose, slots, loading }: Time
 
                             {loading ? (
                                 <ActivityIndicator size="large" color="#00AA00" style={styles.modalLoader} />
+                            ) : slots.length === 0 ? (
+                                <Text style={styles.emptyText}>No slots available right now.</Text>
                             ) : (
                                 <FlatList
                                     data={slots}
@@ -80,6 +82,12 @@ const styles = StyleSheet.create({
     },
     modalLoader: {
         marginTop: 50,
+    },
+    emptyText: {
+        color: '#CCCCCC',
+        textAlign: 'center',
+        marginTop: 40,
+        fontSize: 16,
     },
     slotsGrid: {
         gap: 10,
