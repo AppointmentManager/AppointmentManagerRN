@@ -12,11 +12,10 @@ export class UserService {
     /**
      * Get the current user's profile
      * Returns an ApiResponse<UserProfile> compatible with the useUserProfile hook
-     * TODO: Replace hardcoded userId with actual authenticated user ID
      */
-    static async getUserProfile(): Promise<ApiResponse<UserProfile>> {
+    static async getUserProfile(userId: number): Promise<ApiResponse<UserProfile>> {
         try {
-            const response = await UserRepository.getUserById(1);
+            const response = await UserRepository.getUserById(userId);
             return {
                 success: true,
                 data: UserTransformer.toUserProfile(response),

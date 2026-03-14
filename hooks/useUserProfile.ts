@@ -18,7 +18,7 @@ interface UseUserProfileReturn {
  * Automatically fetches on mount
  * @returns Object containing profile data, loading state, error, and refetch function
  */
-export const useUserProfile = (): UseUserProfileReturn => {
+export const useUserProfile = (userId: number): UseUserProfileReturn => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export const useUserProfile = (): UseUserProfileReturn => {
         setError(null);
 
         try {
-            const response = await UserService.getUserProfile();
+            const response = await UserService.getUserProfile(userId);
 
             if (response.success && response.data) {
                 setProfile(response.data);
@@ -43,8 +43,41 @@ export const useUserProfile = (): UseUserProfileReturn => {
     };
 
     useEffect(() => {
-        fetchProfile();
-    }, []);
+        let isMounted = true;
+
+        const loadProfile = async () => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const response = await UserService.getUserProfile(userId);
+
+                if (!isMounted) {
+                    return;
+                }
+
+                if (response.success && response.data) {
+                    setProfile(response.data);
+                } else {
+                    setError(response.error || 'Failed to fetch profile');
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadProfile();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [userId]);
 
     return {
         profile,

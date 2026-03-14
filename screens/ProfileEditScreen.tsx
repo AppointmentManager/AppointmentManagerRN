@@ -19,7 +19,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileEditScreen() {
     const navigation = useNavigation<NavigationProp>();
-    const { profile, isLoading, error, refetch } = useUserProfile();
+    const { profile, isLoading, error, refetch } = useUserProfile(1);
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
