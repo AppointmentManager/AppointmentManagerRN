@@ -1,69 +1,124 @@
 /**
- * Review Service - Handles all review-related API calls
+ * Review Service - Business logic layer for review operations
+ * Interacts with ReviewRepository for data access.
+ * UI layer should only interact with this service.
  */
 
-import { apiClient } from '../utils/apiClient';
-
-export interface ReviewRequest {
-  userId: number;
-  storeId: number;
-  appointmentId: number;
-  rating: number; // 1-5
-  comment?: string;
-}
-
-export interface ReviewResponse {
-  reviewId: number;
-  userId: number;
-  userName: string;
-  storeId: number;
-  storeName: string;
-  appointmentId: number;
-  rating: number;
-  comment?: string;
-  createdAt: string;
-}
+import { ApiResponse } from '../types/types';
+import {
+  ReviewRepository,
+  ReviewRequest,
+  ReviewResponse,
+} from '../repository/ReviewRepository';
 
 export class ReviewService {
   /**
    * Create a new review
    */
-  static async createReview(request: ReviewRequest): Promise<ReviewResponse> {
-    return apiClient.post<ReviewResponse>('/reviews', request);
+  static async createReview(request: ReviewRequest): Promise<ApiResponse<ReviewResponse>> {
+    try {
+      const response = await ReviewRepository.createReview(request);
+      return {
+        success: true,
+        data: response,
+        message: 'Review submitted successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to submit review',
+      };
+    }
   }
 
   /**
    * Get review by ID
    */
-  static async getReviewById(id: number): Promise<ReviewResponse> {
-    return apiClient.get<ReviewResponse>(`/reviews/${id}`);
+  static async getReviewById(id: number): Promise<ApiResponse<ReviewResponse>> {
+    try {
+      const response = await ReviewRepository.getReviewById(id);
+      return {
+        success: true,
+        data: response,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch review',
+      };
+    }
   }
 
   /**
    * Get all reviews for a specific store
    */
-  static async getReviewsByStore(storeId: number): Promise<ReviewResponse[]> {
-    return apiClient.get<ReviewResponse[]>(`/reviews/store/${storeId}`);
+  static async getReviewsByStore(storeId: number): Promise<ApiResponse<ReviewResponse[]>> {
+    try {
+      const responses = await ReviewRepository.getReviewsByStore(storeId);
+      return {
+        success: true,
+        data: responses,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch store reviews',
+      };
+    }
   }
 
   /**
    * Get all reviews by a specific user
    */
-  static async getReviewsByUser(userId: number): Promise<ReviewResponse[]> {
-    return apiClient.get<ReviewResponse[]>(`/reviews/user/${userId}`);
+  static async getReviewsByUser(userId: number): Promise<ApiResponse<ReviewResponse[]>> {
+    try {
+      const responses = await ReviewRepository.getReviewsByUser(userId);
+      return {
+        success: true,
+        data: responses,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch user reviews',
+      };
+    }
   }
 
   /**
    * Update a review
    */
-  static async updateReview(id: number, request: ReviewRequest): Promise<ReviewResponse> {
-    return apiClient.put<ReviewResponse>(`/reviews/${id}`, request);
+  static async updateReview(id: number, request: ReviewRequest): Promise<ApiResponse<ReviewResponse>> {
+    try {
+      const response = await ReviewRepository.updateReview(id, request);
+      return {
+        success: true,
+        data: response,
+        message: 'Review updated successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update review',
+      };
+    }
   }
 
   /**
    * Delete a review
    */
-  static async deleteReview(id: number): Promise<void> {
-    return apiClient.delete<void>(`/reviews/${id}`);
+  static async deleteReview(id: number): Promise<ApiResponse<void>> {
+    try {
+      await ReviewRepository.deleteReview(id);
+      return {
+        success: true,
+        message: 'Review deleted successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete review',
+      };
+    }
   }
 }

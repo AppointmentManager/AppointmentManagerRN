@@ -1,46 +1,70 @@
 /**
- * Payment Service - Handles all payment-related API calls
+ * Payment Service - Business logic layer for payment operations
+ * Interacts with PaymentRepository for data access.
+ * UI layer should only interact with this service.
  */
 
-import { apiClient } from '../utils/apiClient';
-
-export interface PaymentRequest {
-  appointmentId: number;
-  amount: number;
-  paymentMethod: 'CASH' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'UPI' | 'NET_BANKING';
-  transactionId?: string;
-}
-
-export interface PaymentResponse {
-  paymentId: number;
-  appointmentId: number;
-  amount: number;
-  paymentMethod: 'CASH' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'UPI' | 'NET_BANKING';
-  paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-  transactionId?: string;
-  createdAt: string;
-}
+import { ApiResponse } from '../types/types';
+import {
+  PaymentRepository,
+  PaymentRequest,
+  PaymentResponse,
+} from '../repository/PaymentRepository';
 
 export class PaymentService {
   /**
    * Create a new payment
    */
-  static async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
-    return apiClient.post<PaymentResponse>('/payments', request);
+  static async createPayment(request: PaymentRequest): Promise<ApiResponse<PaymentResponse>> {
+    try {
+      const response = await PaymentRepository.createPayment(request);
+      return {
+        success: true,
+        data: response,
+        message: 'Payment created successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create payment',
+      };
+    }
   }
 
   /**
    * Get payment by ID
    */
-  static async getPaymentById(id: number): Promise<PaymentResponse> {
-    return apiClient.get<PaymentResponse>(`/payments/${id}`);
+  static async getPaymentById(id: number): Promise<ApiResponse<PaymentResponse>> {
+    try {
+      const response = await PaymentRepository.getPaymentById(id);
+      return {
+        success: true,
+        data: response,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch payment',
+      };
+    }
   }
 
   /**
    * Get payment by appointment ID
    */
-  static async getPaymentByAppointmentId(appointmentId: number): Promise<PaymentResponse> {
-    return apiClient.get<PaymentResponse>(`/payments/appointment/${appointmentId}`);
+  static async getPaymentByAppointmentId(appointmentId: number): Promise<ApiResponse<PaymentResponse>> {
+    try {
+      const response = await PaymentRepository.getPaymentByAppointmentId(appointmentId);
+      return {
+        success: true,
+        data: response,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch payment',
+      };
+    }
   }
 
   /**
@@ -49,7 +73,19 @@ export class PaymentService {
   static async updateStatus(
     id: number,
     status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
-  ): Promise<PaymentResponse> {
-    return apiClient.patch<PaymentResponse>(`/payments/${id}/status?status=${status}`);
+  ): Promise<ApiResponse<PaymentResponse>> {
+    try {
+      const response = await PaymentRepository.updateStatus(id, status);
+      return {
+        success: true,
+        data: response,
+        message: `Payment status updated to ${status}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update payment status',
+      };
+    }
   }
 }

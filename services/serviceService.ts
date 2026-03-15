@@ -1,51 +1,52 @@
 /**
- * Service Service - Handles all service-related API calls
+ * Service Service - Business logic layer for service operations
+ * Interacts with ServiceRepository for data access.
+ * UI layer should only interact with this service.
  */
 
-import { apiClient } from '../utils/apiClient';
-
-export interface CategoryResponse {
-  categoryId: number;
-  categoryName: string;
-  description?: string;
-  iconUrl?: string;
-  isActive: boolean;
-}
-
-export interface ServiceRequest {
-  categoryId: number;
-  storeId: number;
-  serviceName: string;
-  description?: string;
-  duration: number; // in minutes
-  price: number;
-}
-
-export interface ServiceResponse {
-  serviceId: number;
-  category: CategoryResponse;
-  storeId: number;
-  storeName: string;
-  serviceName: string;
-  description?: string;
-  duration: number;
-  price: number;
-  isActive: boolean;
-}
+import { ApiResponse } from '../types/types';
+import {
+  ServiceRepository,
+  ServiceRequest,
+  ServiceResponse,
+} from '../repository/ServiceRepository';
 
 export class ServiceService {
   /**
    * Create a new service
    */
-  static async createService(request: ServiceRequest): Promise<ServiceResponse> {
-    return await apiClient.post<ServiceResponse>('/services', request);
+  static async createService(request: ServiceRequest): Promise<ApiResponse<ServiceResponse>> {
+    try {
+      const response = await ServiceRepository.createService(request);
+      return {
+        success: true,
+        data: response,
+        message: 'Service created successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create service',
+      };
+    }
   }
 
   /**
    * Get service by ID
    */
-  static async getServiceById(id: number): Promise<ServiceResponse> {
-    return await apiClient.get<ServiceResponse>(`/services/${id}`);
+  static async getServiceById(id: number): Promise<ApiResponse<ServiceResponse>> {
+    try {
+      const response = await ServiceRepository.getServiceById(id);
+      return {
+        success: true,
+        data: response,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch service',
+      };
+    }
   }
 
   /**
@@ -56,34 +57,55 @@ export class ServiceService {
   static async getAllServices(
     storeId?: number,
     categoryId?: number
-  ): Promise<ServiceResponse[]> {
-    const params = new URLSearchParams();
-
-    if (storeId) {
-      params.append('storeId', storeId.toString());
+  ): Promise<ApiResponse<ServiceResponse[]>> {
+    try {
+      const responses = await ServiceRepository.getAllServices(storeId, categoryId);
+      return {
+        success: true,
+        data: responses,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch services',
+      };
     }
-    if (categoryId) {
-      params.append('categoryId', categoryId.toString());
-    }
-
-    const endpoint = params.toString()
-      ? `/services?${params.toString()}`
-      : '/services';
-
-    return await apiClient.get<ServiceResponse[]>(endpoint);
   }
 
   /**
    * Update a service
    */
-  static async updateService(id: number, request: ServiceRequest): Promise<ServiceResponse> {
-    return await apiClient.put<ServiceResponse>(`/services/${id}`, request);
+  static async updateService(id: number, request: ServiceRequest): Promise<ApiResponse<ServiceResponse>> {
+    try {
+      const response = await ServiceRepository.updateService(id, request);
+      return {
+        success: true,
+        data: response,
+        message: 'Service updated successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update service',
+      };
+    }
   }
 
   /**
    * Delete a service
    */
-  static async deleteService(id: number): Promise<void> {
-    return await apiClient.delete<void>(`/services/${id}`);
+  static async deleteService(id: number): Promise<ApiResponse<void>> {
+    try {
+      await ServiceRepository.deleteService(id);
+      return {
+        success: true,
+        message: 'Service deleted successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete service',
+      };
+    }
   }
 }
