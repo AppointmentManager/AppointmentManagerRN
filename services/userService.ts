@@ -30,12 +30,10 @@ export class UserService {
 
     /**
      * Get the current user's primary location
-     * TODO: Replace hardcoded userId with actual authenticated user ID
      */
-    static async getUserLocation(): Promise<ApiResponse<UserLocation>> {
+    static async getUserLocation(userId: number): Promise<ApiResponse<UserLocation>> {
         try {
-            const response = await UserRepository.getUserById(1);
-            console.log("location response: " + JSON.stringify(response));
+            const response = await UserRepository.getUserById(userId);
 
             return {
                 success: true,
@@ -52,16 +50,15 @@ export class UserService {
     /**
      * Update the current user's profile from the edit screen fields
      * Sends a partial update and returns the updated ApiResponse<UserProfile>
-     * TODO: Replace hardcoded userId with actual authenticated user ID
      */
-    static async updateUserProfile(fields: {
+    static async updateUserProfile(userId: number, fields: {
         firstName: string;
         lastName: string;
         email: string;
         phone: string;
     }): Promise<ApiResponse<UserProfile>> {
         try {
-            const response = await UserRepository.partialUpdateUser(1, {
+            const response = await UserRepository.partialUpdateUser(userId, {
                 firstName: fields.firstName,
                 lastName: fields.lastName,
                 emailId: fields.email,

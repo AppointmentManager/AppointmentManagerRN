@@ -34,7 +34,17 @@ export class UserTransformer {
      */
     static toUserLocation(response: UserProfileResponse): UserLocation {
         const { address } = response;
-        const typeMap: Record<UserProfileResponse['address']['type'], UserLocation['type']> = {
+        if (!address) {
+            return {
+                id: String(response.userId),
+                type: 'home',
+                label: 'Home',
+                address: 'Add your address',
+                isDefault: true,
+            };
+        }
+
+        const typeMap: Record<NonNullable<UserProfileResponse['address']>['type'], UserLocation['type']> = {
             HOME: 'home',
             WORK: 'work',
             BUSINESS: 'other',

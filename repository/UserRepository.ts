@@ -36,7 +36,7 @@ export interface UserProfileResponse {
     phoneNo: string;
     birthDate: string;
     gender: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-    address: AddressDTO;
+    address?: AddressDTO | null;
     createdAt: string;
     isActive: boolean;
 }

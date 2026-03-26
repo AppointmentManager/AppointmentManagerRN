@@ -67,30 +67,32 @@ class ApiClient {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-            const response = await fetch(url, {
-                ...fetchOptions,
-                headers: mergedHeaders,
-                signal: controller.signal,
-            });
+            try {
+                const response = await fetch(url, {
+                    ...fetchOptions,
+                    headers: mergedHeaders,
+                    signal: controller.signal,
+                });
 
-            clearTimeout(timeoutId);
+                if (!response.ok) {
+                    const errorMessage = await response.text().catch(() => response.statusText);
+                    throw new ApiError(
+                        `HTTP ${response.status} for ${url}: ${errorMessage}`,
+                        response.status,
+                        response
+                    );
+                }
 
-            if (!response.ok) {
-                const errorMessage = await response.text().catch(() => response.statusText);
-                throw new ApiError(
-                    `HTTP ${response.status}: ${errorMessage}`,
-                    response.status,
-                    response
-                );
+                // Handle empty responses (204 No Content, DELETE requests, etc.)
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return undefined as T;
+                }
+
+                return await response.json();
+            } finally {
+                clearTimeout(timeoutId);
             }
-
-            // Handle empty responses (204 No Content, DELETE requests, etc.)
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return undefined as T;
-            }
-
-            return await response.json();
         } catch (error) {
             if (error instanceof ApiError) {
                 throw error;
@@ -98,9 +100,9 @@ class ApiClient {
 
             if (error instanceof Error) {
                 if (error.name === 'AbortError') {
-                    throw new ApiError('Request timeout', 408);
+                    throw new ApiError(`Request timeout while reaching ${url}`, 408);
                 }
-                throw new ApiError(`Network error: ${error.message}`);
+                throw new ApiError(`Network error for ${url}: ${error.message}`);
             }
 
             throw new ApiError('Unknown error occurred');

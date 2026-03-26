@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '../contexts/AuthContext';
 import { RootStackParamList } from '../types/navigation';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { useUserProfile } from '../hooks/useUserProfile';
@@ -11,8 +12,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function TopBar() {
     const navigation = useNavigation<NavigationProp>();
-    const { location, isLoading: locationLoading } = useUserLocation();
-    const { profile, isLoading: profileLoading } = useUserProfile(1);
+    const { session } = useAuth();
+    const userId = Number(session?.user.id || 0);
+    const { location, isLoading: locationLoading } = useUserLocation(userId);
+    const { profile, isLoading: profileLoading } = useUserProfile(userId);
     const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
 
     // Helper function to truncate address

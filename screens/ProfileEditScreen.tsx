@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '../contexts/AuthContext';
 import { RootStackParamList } from '../types/navigation';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { UserService } from '../services/userService';
@@ -19,7 +20,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileEditScreen() {
     const navigation = useNavigation<NavigationProp>();
-    const { profile, isLoading, error, refetch } = useUserProfile(1);
+    const { session } = useAuth();
+    const userId = Number(session?.user.id || 0);
+    const { profile, isLoading, error, refetch } = useUserProfile(userId);
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -54,7 +57,7 @@ export default function ProfileEditScreen() {
 
         setIsSaving(true);
         try {
-            const result = await UserService.updateUserProfile({
+            const result = await UserService.updateUserProfile(userId, {
                 firstName,
                 lastName,
                 email,
