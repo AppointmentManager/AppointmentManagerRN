@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
+import {
+    ActivityIndicator,
+    Avatar,
+    Searchbar,
+    Surface,
+    Text,
+    TouchableRipple,
+    useTheme,
+} from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,13 +21,14 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function TopBar() {
     const navigation = useNavigation<NavigationProp>();
+    const theme = useTheme();
     const { session } = useAuth();
     const userId = Number(session?.user.id || 0);
     const { location, isLoading: locationLoading } = useUserLocation(userId);
     const { profile, isLoading: profileLoading } = useUserProfile(userId);
     const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // Helper function to truncate address
     const truncateAddress = (address: string, maxLength: number = 30): string => {
         if (address.length <= maxLength) {
             return address;
@@ -27,26 +37,52 @@ export default function TopBar() {
     };
 
     return (
-        <View style={styles.container}>
-            {/* Top Row: Location, Badges, and Profile */}
-            <View style={styles.topRow}>
+        <Surface
+            style={{
+                backgroundColor: theme.colors.elevation.level1,
+                paddingTop: 50,
+                paddingHorizontal: 16,
+                paddingBottom: 16,
+            }}
+            elevation={2}
+        >
+            {/* Top Row: Location, and Profile */}
+            <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: 16,
+            }}>
                 {/* Left: Location Section */}
-                <View style={styles.locationSection}>
-                    <TouchableOpacity
-                        style={styles.locationHeader}
+                <View style={{ flex: 1 }}>
+                    <TouchableRipple
                         onPress={() => setIsLocationModalVisible(true)}
-                        activeOpacity={0.7}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            marginBottom: 4,
+                            borderRadius: 8,
+                            padding: 4,
+                        }}
                     >
-                        <View style={styles.homeIndicator} />
-                        <Text style={styles.homeText}>
-                            {location?.label || 'Home'}
-                        </Text>
-                        <Text style={styles.dropdownIcon}>▼</Text>
-                    </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: '#00FF00',
+                                marginRight: 8,
+                            }} />
+                            <Text variant="titleMedium" style={{ fontWeight: 'bold', marginRight: 4 }}>
+                                {location?.label || 'Home'}
+                            </Text>
+                            <Text variant="labelSmall">▼</Text>
+                        </View>
+                    </TouchableRipple>
                     {locationLoading ? (
-                        <ActivityIndicator size="small" color="#888" style={styles.loader} />
+                        <ActivityIndicator size="small" color={theme.colors.onSurfaceVariant} style={{ marginLeft: 16, marginTop: 4 }} />
                     ) : (
-                        <Text style={styles.addressText}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 16 }}>
                             {location?.address
                                 ? truncateAddress(location.address)
                                 : '201, 2 Floor, Tower A3, Al...'}
@@ -54,36 +90,46 @@ export default function TopBar() {
                     )}
                 </View>
 
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                        style={styles.profileBadge}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <TouchableRipple
                         onPress={() => navigation.navigate('ProfileEdit')}
+                        style={{ borderRadius: 20 }}
                     >
                         {profileLoading ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <View style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                                backgroundColor: '#4169E1',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            </View>
                         ) : (
-                            <Text style={styles.profileText}>
-                                {profile?.initial || 'U'}
-                            </Text>
+                            <Avatar.Text
+                                size={40}
+                                label={profile?.initial || 'U'}
+                                style={{ backgroundColor: '#4169E1' }}
+                                labelStyle={{ fontWeight: 'bold' }}
+                            />
                         )}
-                    </TouchableOpacity>
+                    </TouchableRipple>
                 </View>
             </View>
 
-            <View style={styles.searchContainer}>
-                <View style={styles.searchBar}>
-                    <Text style={styles.searchIcon}>🔍</Text>
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder='Search Shop..."'
-                        placeholderTextColor="#888"
-                        editable={true}
-                        autoCorrect={false}
-                        autoCapitalize="none"
-                        returnKeyType="search"
-                    />
-                </View>
-            </View>
+            <Searchbar
+                placeholder='Search Shop..."'
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                style={{
+                    backgroundColor: theme.colors.elevation.level5,
+                    borderRadius: 12,
+                }}
+                inputStyle={{ color: theme.colors.onSurface }}
+                placeholderTextColor={theme.colors.onSurfaceVariant}
+                iconColor={theme.colors.onSurfaceVariant}
+            />
 
             {/* Location Selection Modal */}
             <LocationSelectModal
@@ -92,163 +138,9 @@ export default function TopBar() {
                 currentLocation={location}
                 onAddNewAddress={() => {
                     setIsLocationModalVisible(false);
-                    // TODO: Navigate to add address screen
                     console.log('Add new address clicked');
                 }}
             />
-        </View>
+        </Surface>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#1a1a1a',
-        paddingTop: 50,
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-    },
-    topRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-    },
-    locationSection: {
-        flex: 1,
-    },
-    locationHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 4,
-    },
-    homeIndicator: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#00FF00',
-        marginRight: 8,
-    },
-    homeText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-        marginRight: 4,
-    },
-    dropdownIcon: {
-        fontSize: 12,
-        color: '#FFFFFF',
-    },
-    addressText: {
-        fontSize: 14,
-        color: '#888',
-        marginLeft: 16,
-    },
-    loader: {
-        marginLeft: 16,
-        marginTop: 4,
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    goldBadge: {
-        backgroundColor: '#FFF8DC',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#DAA520',
-    },
-    goldLabel: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: '#DAA520',
-    },
-    goldAmount: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#DAA520',
-    },
-    iconButton: {
-        width: 40,
-        height: 40,
-        backgroundColor: '#2a2a2a',
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    walletIcon: {
-        fontSize: 20,
-    },
-    profileBadge: {
-        width: 40,
-        height: 40,
-        backgroundColor: '#4169E1',
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    profileText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    searchBar: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        gap: 12,
-    },
-    searchIcon: {
-        fontSize: 20,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        color: '#FFFFFF',
-        paddingVertical: 0,
-        minHeight: 40,
-    },
-    micIcon: {
-        fontSize: 20,
-    },
-    toggleContainer: {
-        alignItems: 'center',
-        gap: 4,
-    },
-    toggleLabel: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    toggleSwitch: {
-        width: 30,
-        height: 50,
-        backgroundColor: '#00AA00',
-        borderRadius: 15,
-        justifyContent: 'flex-start',
-        padding: 3,
-    },
-    toggleIndicator: {
-        width: 24,
-        height: 24,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-    },
-    toggleLabelOff: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: '#888',
-    },
-});
