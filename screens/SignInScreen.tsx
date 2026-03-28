@@ -1,5 +1,11 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Animated, KeyboardAvoidingView, Platform, View } from 'react-native';
+import {
+    Animated,
+    KeyboardAvoidingView,
+    Platform,
+    View,
+    useWindowDimensions,
+} from 'react-native';
 import {
     Button,
     HelperText,
@@ -16,7 +22,6 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthService } from '../services/authService';
 import { RootStackParamList } from '../types/navigation';
-import { UserService } from '../services/userService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -26,6 +31,7 @@ const isPhone = (value: string) => /^[0-9]{10}$/.test(value);
 export default function SignInScreen() {
     const navigation = useNavigation<NavigationProp>();
     const theme = useTheme();
+    const { width: screenWidth } = useWindowDimensions();
     const { signIn } = useAuth();
     const [identifier, setIdentifier] = useState('');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -38,6 +44,24 @@ export default function SignInScreen() {
     const otpRefs = useRef<Array<React.ElementRef<typeof TextInput> | null>>([]);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
+    const otpDigitsCount = otp.length;
+    const otpGap = 8;
+    const horizontalScreenPadding = 24 * 2;
+    const otpCardPadding = 20 * 2;
+    const otpAvailableWidth = Math.max(
+        0,
+        screenWidth - horizontalScreenPadding - otpCardPadding,
+    );
+    const otpInputWidth = Math.max(
+        34,
+        Math.min(
+            46,
+            Math.floor(
+                (otpAvailableWidth - otpGap * (otpDigitsCount - 1)) / otpDigitsCount,
+            ),
+        ),
+    );
+    const otpInputHeight = otpInputWidth >= 42 ? 54 : 50;
 
     const trimmedIdentifier = useMemo(() => identifier.trim(), [identifier]);
 
@@ -361,7 +385,8 @@ export default function SignInScreen() {
                                     style={{
                                         flexDirection: 'row',
                                         justifyContent: 'center',
-                                        gap: 10,
+                                        gap: otpGap,
+                                        width: '100%',
                                     }}>
                                     {otp.map((digit, index) => (
                                         <TextInput
@@ -378,8 +403,8 @@ export default function SignInScreen() {
                                             maxLength={1}
                                             mode="outlined"
                                             style={{
-                                                width: 46,
-                                                height: 54,
+                                                width: otpInputWidth,
+                                                height: otpInputHeight,
                                                 textAlign: 'center',
                                                 backgroundColor: digit
                                                     ? theme.colors.primaryContainer
