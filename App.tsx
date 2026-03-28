@@ -8,7 +8,6 @@ import HomeScreen from './screens/HomeScreen';
 import ProfileEditScreen from './screens/ProfileEditScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import SignInScreen from './screens/SignInScreen';
-import SignUpScreen from './screens/SignUpScreen';
 import VendorDetailsScreen from './view/VendorDetailsScreen';
 import {RootStackParamList} from './types/navigation';
 
@@ -70,7 +69,6 @@ function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="SignIn" component={SignInScreen} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
             <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           </>
         )}
