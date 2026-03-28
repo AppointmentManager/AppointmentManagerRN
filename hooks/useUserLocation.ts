@@ -18,17 +18,24 @@ interface UseUserLocationReturn {
  * Automatically fetches on mount
  * @returns Object containing location data, loading state, error, and refetch function
  */
-export const useUserLocation = (): UseUserLocationReturn => {
+export const useUserLocation = (userId: number): UseUserLocationReturn => {
     const [location, setLocation] = useState<UserLocation | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchLocation = async () => {
+        if (!userId) {
+            setLocation(null);
+            setError('Missing user ID');
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await UserService.getUserLocation();
+            const response = await UserService.getUserLocation(userId);
 
             if (response.success && response.data) {
                 setLocation(response.data);
@@ -43,8 +50,48 @@ export const useUserLocation = (): UseUserLocationReturn => {
     };
 
     useEffect(() => {
-        fetchLocation();
-    }, []);
+        let isMounted = true;
+
+        const loadLocation = async () => {
+            if (!userId) {
+                setLocation(null);
+                setError('Missing user ID');
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const response = await UserService.getUserLocation(userId);
+
+                if (!isMounted) {
+                    return;
+                }
+
+                if (response.success && response.data) {
+                    setLocation(response.data);
+                } else {
+                    setError(response.error || 'Failed to fetch location');
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadLocation();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [userId]);
 
     return {
         location,

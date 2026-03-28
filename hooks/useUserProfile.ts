@@ -24,6 +24,13 @@ export const useUserProfile = (userId: number): UseUserProfileReturn => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchProfile = async () => {
+        if (!userId) {
+            setProfile(null);
+            setError('Missing user ID');
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
@@ -46,6 +53,13 @@ export const useUserProfile = (userId: number): UseUserProfileReturn => {
         let isMounted = true;
 
         const loadProfile = async () => {
+            if (!userId) {
+                setProfile(null);
+                setError('Missing user ID');
+                setIsLoading(false);
+                return;
+            }
+
             setIsLoading(true);
             setError(null);
 

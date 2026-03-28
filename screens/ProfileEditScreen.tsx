@@ -1,366 +1,309 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
+import {View, ScrollView, Alert} from 'react-native';
 import {
-    View,
-    Text,
-    TextInput,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    Alert,
-    ActivityIndicator,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
-import { useUserProfile } from '../hooks/useUserProfile';
-import { UserService } from '../services/userService';
+  ActivityIndicator,
+  Appbar,
+  Avatar,
+  Button,
+  Text,
+  TextInput,
+  TouchableRipple,
+  useTheme,
+} from 'react-native-paper';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useAuth} from '../contexts/AuthContext';
+import {RootStackParamList} from '../types/navigation';
+import {useUserProfile} from '../hooks/useUserProfile';
+import {UserService} from '../services/userService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileEditScreen() {
-    const navigation = useNavigation<NavigationProp>();
-    const { profile, isLoading, error, refetch } = useUserProfile(1);
+  const navigation = useNavigation<NavigationProp>();
+  const theme = useTheme();
+  const {session} = useAuth();
+  const userId = Number(session?.user.id || 0);
+  const {profile, isLoading, error, refetch} = useUserProfile(userId);
 
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [mobileNumber, setMobileNumber] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-    // Populate form fields when profile data is fetched
-    useEffect(() => {
-        if (profile) {
-            const nameParts = profile.name.split(' ');
-            setFirstName(nameParts[0] || '');
-            setLastName(nameParts.slice(1).join(' ') || '');
-            setEmail(profile.email || '');
-            setMobileNumber(profile.phone || '');
-        }
-    }, [profile]);
+  useEffect(() => {
+    if (profile) {
+      const nameParts = profile.name.split(' ');
+      setFirstName(nameParts[0] || '');
+      setLastName(nameParts.slice(1).join(' ') || '');
+      setEmail(profile.email || '');
+      setMobileNumber(profile.phone || '');
+    }
+  }, [profile]);
 
-    const handleSave = async () => {
-        // Basic validation
-        if (!firstName || !lastName || !email || !mobileNumber) {
-            Alert.alert('Error', 'Please fill in all fields');
-            return;
-        }
-
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            Alert.alert('Error', 'Please enter a valid email address');
-            return;
-        }
-
-        setIsSaving(true);
-        try {
-            const result = await UserService.updateUserProfile({
-                firstName,
-                lastName,
-                email,
-                phone: mobileNumber,
-            });
-
-            if (result.success) {
-                Alert.alert('Success', result.message || 'Profile updated successfully!', [
-                    {
-                        text: 'OK',
-                        onPress: () => navigation.goBack(),
-                    },
-                ]);
-            } else {
-                Alert.alert('Error', result.error || 'Failed to update profile');
-            }
-        } catch (err) {
-            Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Text style={styles.backIcon}>←</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Edit Profile</Text>
-                    <View style={styles.placeholder} />
-                </View>
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color="#4169E1" />
-                    <Text style={styles.loadingText}>Loading profile...</Text>
-                </View>
-            </View>
-        );
+  const handleSave = async () => {
+    if (!firstName || !lastName || !email || !mobileNumber) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
     }
 
-    // Error state
-    if (error) {
-        return (
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Text style={styles.backIcon}>←</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Edit Profile</Text>
-                    <View style={styles.placeholder} />
-                </View>
-                <View style={styles.centered}>
-                    <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity style={styles.retryButton} onPress={refetch}>
-                        <Text style={styles.retryButtonText}>Retry</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        );
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
     }
 
-    const displayInitial = profile?.initial || firstName?.charAt(0)?.toUpperCase() || '?';
+    setIsSaving(true);
+    try {
+      const result = await UserService.updateUserProfile(userId, {
+        firstName,
+        lastName,
+        email,
+        phone: mobileNumber,
+      });
 
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          result.message || 'Profile updated successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ],
+        );
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update profile');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
     return (
-        <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Text style={styles.backIcon}>←</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Edit Profile</Text>
-                <View style={styles.placeholder} />
-            </View>
-
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                {/* Profile Picture Section */}
-                <View style={styles.profileSection}>
-                    <View style={styles.profilePictureContainer}>
-                        <View style={styles.profileBadge}>
-                            <Text style={styles.profileText}>{displayInitial}</Text>
-                        </View>
-                        <TouchableOpacity style={styles.cameraButton}>
-                            <Text style={styles.cameraIcon}>📷</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity>
-                        <Text style={styles.changePhotoText}>Change Photo</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Form Section */}
-                <View style={styles.formSection}>
-                    {/* First Name */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>First Name</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter first name"
-                            placeholderTextColor="#666"
-                            value={firstName}
-                            onChangeText={setFirstName}
-                        />
-                    </View>
-
-                    {/* Last Name */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Last Name</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter last name"
-                            placeholderTextColor="#666"
-                            value={lastName}
-                            onChangeText={setLastName}
-                        />
-                    </View>
-
-                    {/* Email */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="email@example.com"
-                            placeholderTextColor="#666"
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                    </View>
-
-                    {/* Mobile Number */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Mobile Number</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="+1 (555) 123-4567"
-                            placeholderTextColor="#666"
-                            value={mobileNumber}
-                            onChangeText={setMobileNumber}
-                            keyboardType="phone-pad"
-                        />
-                    </View>
-                </View>
-
-                {/* Save Button */}
-                <TouchableOpacity
-                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-                    onPress={handleSave}
-                    disabled={isSaving}
-                >
-                    {isSaving ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                        <Text style={styles.saveButtonText}>Save Changes</Text>
-                    )}
-                </TouchableOpacity>
-            </ScrollView>
+      <View style={{flex: 1, backgroundColor: theme.colors.background}}>
+        <Appbar.Header
+          style={{backgroundColor: theme.colors.elevation.level1}}
+          elevated>
+          <Appbar.BackAction
+            onPress={() => navigation.goBack()}
+            color={theme.colors.onSurface}
+          />
+          <Appbar.Content
+            title="Edit Profile"
+            titleStyle={{color: theme.colors.onSurface, fontWeight: 'bold'}}
+          />
+        </Appbar.Header>
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 32,
+          }}>
+          <ActivityIndicator size="large" color="#4169E1" />
+          <Text
+            variant="bodyLarge"
+            style={{color: theme.colors.onSurfaceVariant, marginTop: 12}}>
+            Loading profile...
+          </Text>
         </View>
+      </View>
     );
-}
+  }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#0a0a0a',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 50,
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        backgroundColor: '#1a1a1a',
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    backIcon: {
-        fontSize: 28,
-        color: '#FFFFFF',
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    placeholder: {
-        width: 40,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: 16,
-        paddingTop: 24,
-        paddingBottom: 32,
-    },
-    profileSection: {
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    profilePictureContainer: {
-        position: 'relative',
-        marginBottom: 12,
-    },
-    profileBadge: {
-        width: 100,
-        height: 100,
-        backgroundColor: '#4169E1',
-        borderRadius: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    profileText: {
-        fontSize: 42,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    cameraButton: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 36,
-        height: 36,
-        backgroundColor: '#2a2a2a',
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: '#0a0a0a',
-    },
-    cameraIcon: {
-        fontSize: 18,
-    },
-    changePhotoText: {
-        fontSize: 16,
-        color: '#4169E1',
-        fontWeight: '600',
-    },
-    formSection: {
-        marginBottom: 24,
-    },
-    inputGroup: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#FFFFFF',
-        marginBottom: 8,
-    },
-    input: {
-        backgroundColor: '#2a2a2a',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-        color: '#FFFFFF',
-    },
-    saveButton: {
-        backgroundColor: '#4169E1',
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        marginTop: 8,
-    },
-    saveButtonText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    saveButtonDisabled: {
-        opacity: 0.6,
-    },
-    centered: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 32,
-    },
-    loadingText: {
-        fontSize: 16,
-        color: '#999',
-        marginTop: 12,
-    },
-    errorText: {
-        fontSize: 16,
-        color: '#FF6B6B',
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    retryButton: {
-        backgroundColor: '#4169E1',
-        borderRadius: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-    },
-    retryButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
-    },
-});
+  // Error state
+  if (error) {
+    return (
+      <View style={{flex: 1, backgroundColor: theme.colors.background}}>
+        <Appbar.Header
+          style={{backgroundColor: theme.colors.elevation.level1}}
+          elevated>
+          <Appbar.BackAction
+            onPress={() => navigation.goBack()}
+            color={theme.colors.onSurface}
+          />
+          <Appbar.Content
+            title="Edit Profile"
+            titleStyle={{color: theme.colors.onSurface, fontWeight: 'bold'}}
+          />
+        </Appbar.Header>
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 32,
+          }}>
+          <Text
+            variant="bodyLarge"
+            style={{
+              color: theme.colors.error,
+              textAlign: 'center',
+              marginBottom: 16,
+            }}>
+            {error}
+          </Text>
+          <Button
+            mode="contained"
+            onPress={refetch}
+            buttonColor="#4169E1"
+            textColor="#ffffff"
+            style={{borderRadius: 12}}
+            contentStyle={{paddingVertical: 4, paddingHorizontal: 16}}>
+            Retry
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
+  const displayInitial =
+    profile?.initial || firstName?.charAt(0)?.toUpperCase() || '?';
+
+  return (
+    <View style={{flex: 1, backgroundColor: theme.colors.background}}>
+      {/* Header */}
+      <Appbar.Header
+        style={{backgroundColor: theme.colors.elevation.level1}}
+        elevated>
+        <Appbar.BackAction
+          onPress={() => navigation.goBack()}
+          color={theme.colors.onSurface}
+        />
+        <Appbar.Content
+          title="Edit Profile"
+          titleStyle={{color: theme.colors.onSurface, fontWeight: 'bold'}}
+        />
+      </Appbar.Header>
+
+      <ScrollView
+        style={{flex: 1}}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 24,
+          paddingBottom: 32,
+        }}>
+        {/* Profile Picture Section */}
+        <View style={{alignItems: 'center', marginBottom: 32}}>
+          <View style={{position: 'relative', marginBottom: 12}}>
+            <Avatar.Text
+              size={100}
+              label={displayInitial}
+              style={{backgroundColor: '#4169E1'}}
+              labelStyle={{fontSize: 42, fontWeight: 'bold'}}
+            />
+            <TouchableRipple
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: 36,
+                height: 36,
+                backgroundColor: theme.colors.elevation.level5,
+                borderRadius: 18,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 3,
+                borderColor: theme.colors.background,
+              }}
+              onPress={() => {}}>
+              <Text style={{fontSize: 18}}>📷</Text>
+            </TouchableRipple>
+          </View>
+          <TouchableRipple
+            onPress={() => {}}
+            style={{borderRadius: 8, padding: 4}}>
+            <Text
+              variant="bodyLarge"
+              style={{color: '#4169E1', fontWeight: '600'}}>
+              Change Photo
+            </Text>
+          </TouchableRipple>
+        </View>
+
+        {/* Form Section */}
+        <View style={{gap: 16, marginBottom: 24}}>
+          <TextInput
+            value={firstName}
+            onChangeText={setFirstName}
+            label="First Name"
+            placeholder="Enter first name"
+            mode="outlined"
+            style={{backgroundColor: theme.colors.background}}
+            outlineStyle={{
+              borderRadius: 12,
+              borderColor: theme.colors.outlineVariant,
+            }}
+            textColor={theme.colors.onSurface}
+          />
+
+          <TextInput
+            value={lastName}
+            onChangeText={setLastName}
+            label="Last Name"
+            placeholder="Enter last name"
+            mode="outlined"
+            style={{backgroundColor: theme.colors.background}}
+            outlineStyle={{
+              borderRadius: 12,
+              borderColor: theme.colors.outlineVariant,
+            }}
+            textColor={theme.colors.onSurface}
+          />
+
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            label="Email"
+            placeholder="email@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            mode="outlined"
+            style={{backgroundColor: theme.colors.background}}
+            outlineStyle={{
+              borderRadius: 12,
+              borderColor: theme.colors.outlineVariant,
+            }}
+            textColor={theme.colors.onSurface}
+          />
+
+          <TextInput
+            value={mobileNumber}
+            onChangeText={setMobileNumber}
+            label="Mobile Number"
+            placeholder="+1 (555) 123-4567"
+            keyboardType="phone-pad"
+            mode="outlined"
+            style={{backgroundColor: theme.colors.background}}
+            outlineStyle={{
+              borderRadius: 12,
+              borderColor: theme.colors.outlineVariant,
+            }}
+            textColor={theme.colors.onSurface}
+          />
+        </View>
+
+        {/* Save Button */}
+        <Button
+          mode="contained"
+          onPress={handleSave}
+          disabled={isSaving}
+          loading={isSaving}
+          contentStyle={{paddingVertical: 8}}
+          style={{borderRadius: 12, marginTop: 8}}
+          labelStyle={{fontSize: 18, fontWeight: 'bold'}}
+          buttonColor="#4169E1"
+          textColor="#ffffff">
+          Save Changes
+        </Button>
+      </ScrollView>
+    </View>
+  );
+}

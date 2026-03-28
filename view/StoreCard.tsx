@@ -1,171 +1,117 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { StoreCardData } from '../types/store';
+import {View} from 'react-native';
+import {Avatar, Card, Chip, Text, useTheme} from 'react-native-paper';
+import {StoreCardData} from '../types/store';
 
 interface StoreCardProps {
-    store: StoreCardData;
+  store: StoreCardData;
 }
 
-export default function StoreCard({ store }: StoreCardProps) {
-    const storeInitial = store.storeName.charAt(0).toUpperCase();
+export default function StoreCard({store}: StoreCardProps) {
+  const theme = useTheme();
+  const storeInitial = store.storeName.charAt(0).toUpperCase();
 
-    return (
-        <View style={styles.card}>
-            <View style={styles.leading}>
-                <Text style={styles.leadingText}>{storeInitial}</Text>
-            </View>
-
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <View style={styles.titleBlock}>
-                        <Text style={styles.storeName}>{store.storeName}</Text>
-                        <Text style={styles.vendorName}>{store.vendorName}</Text>
-                    </View>
-                    <View style={styles.ratingContainer}>
-                        <Text style={styles.star}>★</Text>
-                        <Text style={styles.rating}>
-                            {store.rating !== null ? store.rating.toFixed(1) : 'New'}
-                        </Text>
-                    </View>
-                </View>
-
-                <Text style={styles.address}>{store.address}</Text>
-
-                {store.description ? (
-                    <Text style={styles.description} numberOfLines={2}>
-                        {store.description}
-                    </Text>
-                ) : null}
-
-                <View style={styles.availabilityPanel}>
-                    <Text style={store.isOpen ? styles.openText : styles.closedText}>
-                        {store.isOpen ? 'Open now' : 'Closed'}
-                    </Text>
-                    <Text style={styles.nextSlot}>Next: {store.nextAvailableSlot}</Text>
-                    <Text style={styles.availabilitySummary}>{store.availabilitySummary}</Text>
-                </View>
-
-                <View style={styles.footer}>
-                    <Text style={styles.contactText}>{store.phone}</Text>
-                    <Text style={styles.contactText}>{store.email}</Text>
-                </View>
-            </View>
-        </View>
-    );
-}
-
-const styles = StyleSheet.create({
-    card: {
-        flexDirection: 'row',
-        backgroundColor: '#1f1f1f',
+  return (
+    <Card
+      style={{
+        backgroundColor: theme.colors.surfaceVariant,
         borderRadius: 18,
-        padding: 14,
         marginBottom: 16,
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 6,
-        elevation: 4,
-        gap: 12,
-    },
-    leading: {
-        width: 68,
-        height: 68,
-        borderRadius: 16,
-        backgroundColor: '#163d2a',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 2,
-    },
-    leadingText: {
-        color: '#FFFFFF',
-        fontSize: 28,
-        fontWeight: '700',
-    },
-    content: {
-        flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        gap: 8,
-    },
-    titleBlock: {
-        flex: 1,
-    },
-    storeName: {
-        color: '#FFFFFF',
-        fontSize: 17,
-        fontWeight: '700',
-    },
-    vendorName: {
-        color: '#7FAE8B',
-        fontSize: 12,
-        marginTop: 2,
-        textTransform: 'uppercase',
-    },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#2f2f2f',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 999,
-    },
-    star: {
-        color: '#FFD700',
-        fontSize: 12,
-        marginRight: 4,
-    },
-    rating: {
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: '700',
-    },
-    address: {
-        color: '#B8B8B8',
-        fontSize: 13,
-        marginTop: 8,
-    },
-    description: {
-        color: '#D8D8D8',
-        fontSize: 13,
-        lineHeight: 18,
-        marginTop: 8,
-    },
-    availabilityPanel: {
-        backgroundColor: '#262626',
-        borderRadius: 14,
-        padding: 12,
-        marginTop: 12,
-        gap: 4,
-    },
-    openText: {
-        color: '#00AA00',
-        fontSize: 13,
-        fontWeight: '700',
-    },
-    closedText: {
-        color: '#FF8A80',
-        fontSize: 13,
-        fontWeight: '700',
-    },
-    nextSlot: {
-        color: '#FFFFFF',
-        fontSize: 13,
-        fontWeight: '600',
-    },
-    availabilitySummary: {
-        color: '#B8B8B8',
-        fontSize: 12,
-    },
-    footer: {
-        marginTop: 12,
-        gap: 2,
-    },
-    contactText: {
-        color: '#9F9F9F',
-        fontSize: 12,
-    },
-});
+      }}
+      elevation={2}>
+      <Card.Content
+        style={{flexDirection: 'row', gap: 12, paddingVertical: 14}}>
+        <Avatar.Text
+          size={68}
+          label={storeInitial}
+          style={{backgroundColor: '#163d2a', borderRadius: 16}}
+          labelStyle={{fontSize: 28, fontWeight: '700'}}
+        />
+
+        <View style={{flex: 1}}>
+          {/* Header */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 8,
+            }}>
+            <View style={{flex: 1}}>
+              <Text variant="titleMedium" style={{fontWeight: '700'}}>
+                {store.storeName}
+              </Text>
+              <Text
+                variant="labelSmall"
+                style={{
+                  color: '#7FAE8B',
+                  marginTop: 2,
+                  textTransform: 'uppercase',
+                }}>
+                {store.vendorName}
+              </Text>
+            </View>
+            <Chip
+              compact
+              style={{
+                backgroundColor: theme.colors.elevation.level3,
+                height: 28,
+              }}
+              textStyle={{fontSize: 12, fontWeight: '700'}}>
+              ★ {store.rating !== null ? store.rating.toFixed(1) : 'New'}
+            </Chip>
+          </View>
+
+          <Text variant="bodySmall" style={{color: '#B8B8B8', marginTop: 8}}>
+            {store.address}
+          </Text>
+
+          {store.description ? (
+            <Text
+              variant="bodySmall"
+              numberOfLines={2}
+              style={{color: '#D8D8D8', lineHeight: 18, marginTop: 8}}>
+              {store.description}
+            </Text>
+          ) : null}
+
+          {/* Availability Panel */}
+          <Card
+            style={{
+              backgroundColor: theme.colors.elevation.level3,
+              borderRadius: 14,
+              marginTop: 12,
+            }}
+            elevation={0}>
+            <Card.Content style={{gap: 4, paddingVertical: 12}}>
+              <Text
+                variant="labelMedium"
+                style={{
+                  color: store.isOpen ? '#00AA00' : '#FF8A80',
+                  fontWeight: '700',
+                }}>
+                {store.isOpen ? 'Open now' : 'Closed'}
+              </Text>
+              <Text variant="bodySmall" style={{fontWeight: '600'}}>
+                Next: {store.nextAvailableSlot}
+              </Text>
+              <Text variant="labelSmall" style={{color: '#B8B8B8'}}>
+                {store.availabilitySummary}
+              </Text>
+            </Card.Content>
+          </Card>
+
+          {/* Footer */}
+          <View style={{marginTop: 12, gap: 2}}>
+            <Text variant="labelSmall" style={{color: '#9F9F9F'}}>
+              {store.phone}
+            </Text>
+            <Text variant="labelSmall" style={{color: '#9F9F9F'}}>
+              {store.email}
+            </Text>
+          </View>
+        </View>
+      </Card.Content>
+    </Card>
+  );
+}
